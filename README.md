@@ -11,6 +11,15 @@ Interface Web moderne et intuitive pour automatiser les scans de sécurité web 
 > Pour tester vos scans en toute sécurité, vous pouvez utiliser des plateformes d'entraînement dédiées comme [http://testphp.vulnweb.com](http://testphp.vulnweb.com).
 
 ---
+## Screenshots 
+
+<img width="454" height="255" alt="image" src="https://github.com/user-attachments/assets/8cde5e8f-30b1-4270-8002-be3c4368bac9" />
+
+<img width="454" height="318" alt="image" src="https://github.com/user-attachments/assets/2f631de0-e965-4023-bb4b-5632a84263e5" />
+
+<img width="454" height="178" alt="image" src="https://github.com/user-attachments/assets/76c9e61a-69a4-459c-a4fb-6c2af0c18ab1" />
+
+<img width="454" height="216" alt="image" src="https://github.com/user-attachments/assets/df78b471-f3c4-4d71-bf67-570823ce329f" />
 
 ## 🚀 Fonctionnalités
 
