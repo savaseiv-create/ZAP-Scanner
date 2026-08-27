@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ZAP Scanner</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0a0c0f;--panel:#111418;--border:#1e2430;--accent:#00e5a0;--accent2:#0080ff;--warn:#ffaa00;--danger:#ff4d4d;--text:#e8edf5;--muted:#5a6478;--card:#161b24;--radius:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:40px 40px;opacity:.3;pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;width:100%;max-width:800px;padding:48px 24px 80px;display:flex;flex-direction:column;gap:28px}
+header{text-align:center}
+.logo{display:inline-flex;align-items:center;gap:10px;margin-bottom:16px}
+.logo-box{width:38px;height:38px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-size:20px;font-weight:800}
+.logo-text span{color:var(--accent)}
+h1{font-size:clamp(26px,5vw,42px);font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:8px}
+h1 em{color:var(--accent);font-style:normal}
+.sub{font-size:15px;color:var(--muted)}
+.zap-status{display:flex;align-items:center;justify-content:center;gap:8px;font-size:13px;font-family:'JetBrains Mono',monospace;padding:10px 20px;border-radius:30px;width:fit-content;margin:16px auto 0}
+.zap-status.ok{background:rgba(0,229,160,.1);border:1px solid rgba(0,229,160,.3);color:var(--accent)}
+.zap-status.fail{background:rgba(255,77,77,.1);border:1px solid rgba(255,77,77,.3);color:var(--danger)}
+.zap-status.checking{background:rgba(0,128,255,.1);border:1px solid rgba(0,128,255,.3);color:var(--accent2)}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.ok{background:var(--accent);animation:blink 2s infinite}
+.dot.fail{background:var(--danger)}
+.dot.checking{background:var(--accent2);animation:blink .6s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:28px;display:flex;flex-direction:column;gap:18px}
+.input-row{display:flex;gap:10px}
+.url-wrap{flex:1;position:relative;display:flex;align-items:center}
+.url-pre{position:absolute;left:14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);pointer-events:none;user-select:none}
+#url-in{width:100%;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 14px 14px 52px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s}
+#url-in::placeholder{color:var(--muted)}
+#url-in:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,160,.1)}
+.btn-go{background:var(--accent);color:#0a0c0f;border:none;border-radius:var(--radius);padding:0 26px;font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:background .15s,transform .1s;white-space:nowrap;height:50px}
+.btn-go:hover{background:#00ffb3}
+.btn-go:active{transform:scale(.97)}
+.btn-go:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chip-lbl{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.chip{background:var(--card);border:1.5px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--muted);cursor:pointer;transition:all .15s;user-select:none}
+.chip:hover{border-color:var(--accent);color:var(--text)}
+.chip.on{background:rgba(0,229,160,.1);border-color:var(--accent);color:var(--accent)}
+.notice{display:flex;gap:10px;align-items:flex-start;padding:12px 16px;border-radius:var(--radius);font-size:13px;line-height:1.6}
+.notice.warn{background:rgba(255,170,0,.07);border:1px solid rgba(255,170,0,.25);color:var(--warn)}
+#prog-box{display:none;background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:26px 28px;flex-direction:column;gap:16px}
+#prog-box.show{display:flex}
+.ph{display:flex;align-items:center;gap:12px}
+.pdot{width:12px;height:12px;background:var(--accent);border-radius:50%;animation:pulse 1.2s ease-in-out infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(0,229,160,.5)}50%{box-shadow:0 0 0 8px rgba(0,229,160,0)}}
+.ptitle{font-size:15px;font-weight:700;flex:1}
+.purl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:260px}
+.steps{display:flex;flex-direction:column;gap:7px}
+.step{display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--card);border-radius:8px;border:1px solid transparent;transition:all .3s}
+.step.active{border-color:rgba(0,229,160,.3);background:rgba(0,229,160,.06)}
+.step.done{border-color:rgba(0,229,160,.1)}
+.sicon{width:26px;height:26px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;transition:all .3s}
+.step.active .sicon{background:var(--accent);color:#0a0c0f}
+.step.done .sicon{background:rgba(0,229,160,.2);color:var(--accent)}
+.slbl{font-size:14px;color:var(--muted);flex:1}
+.step.active .slbl{color:var(--text);font-weight:600}
+.bwrap{width:80px;height:4px;background:var(--border);border-radius:4px;overflow:hidden}
+.bar{height:100%;background:var(--accent);border-radius:4px;width:0;transition:width .4s linear}
+#rep-box{display:none;flex-direction:column;gap:18px;animation:up .5s ease both}
+#rep-box.show{display:flex}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.rep-title{font-size:20px;font-weight:800}
+.rep-meta{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-top:4px}
+.sev-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.sev{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px 18px;position:relative;overflow:hidden;transition:transform .15s}
+.sev:hover{transform:translateY(-2px)}
+.sev::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.sev.h::before{background:#ff4d4d}
+.sev.m::before{background:#ffaa00}
+.sev.l::before{background:#00e5a0}
+.sev.i::before{background:#0080ff}
+.sev-n{font-size:34px;font-weight:800;line-height:1;margin-bottom:4px}
+.sev.h .sev-n{color:#ff4d4d}
+.sev.m .sev-n{color:#ffaa00}
+.sev.l .sev-n{color:var(--accent)}
+.sev.i .sev-n{color:var(--accent2)}
+.sev-lbl{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.vulns{display:flex;flex-direction:column;gap:7px}
+.vi{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:border-color .15s}
+.vi:hover{border-color:rgba(255,255,255,.12)}
+.vh{display:flex;align-items:center;gap:12px;padding:13px 16px}
+.vbadge{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:3px 9px;border-radius:20px;flex-shrink:0}
+.bh{background:rgba(255,77,77,.15);color:#ff4d4d}
+.bm{background:rgba(255,170,0,.15);color:#ffaa00}
+.bl{background:rgba(0,229,160,.15);color:var(--accent)}
+.bi{background:rgba(0,128,255,.15);color:var(--accent2)}
+.vname{font-size:14px;font-weight:600;flex:1}
+.vurl{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.vchev{color:var(--muted);font-size:11px;transition:transform .2s}
+.vi.open .vchev{transform:rotate(90deg)}
+.vbody{display:none;padding:0 16px 14px;border-top:1px solid var(--border)}
+.vi.open .vbody{display:block}
+.vdesc{font-size:13px;color:var(--muted);line-height:1.65;margin-top:10px}
+.vsol{margin-top:10px;background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.15);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--accent);line-height:1.6}
+.vsol strong{font-weight:700;display:block;margin-bottom:4px}
+.actions{display:flex;gap:10px;margin-top:4px}
+.btn-dl{flex:1;padding:13px;border-radius:var(--radius);font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;border:1.5px solid var(--border);background:var(--card);color:var(--text);transition:all .15s}
+.btn-dl:hover{border-color:var(--accent);color:var(--accent)}
+.btn-new{flex:1;padding:13px;border-radius:var(--radius);font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;border:none;background:var(--accent);color:#0a0c0f;transition:background .15s}
+.btn-new:hover{background:#00ffb3}
+@media(max-width:520px){.sev-row{grid-template-columns:repeat(2,1fr)}.input-row{flex-direction:column}.btn-go{height:48px;justify-content:center}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">
+      <div class="logo-box">&#x1F6E1;</div>
+      <span class="logo-text">ZAP<span>Scanner</span></span>
+    </div>
+    <h1>Scan de <em>vulnerabilites</em><br/>en un clic</h1>
+    <p class="sub">Colle l'URL de ton application web — le rapport apparait automatiquement</p>
+    <div class="zap-status checking" id="zap-badge">
+      <div class="dot checking" id="zap-dot"></div>
+      <span id="zap-txt">Verification de ZAP...</span>
+    </div>
+  </header>
+
+  <div class="card">
+    <div class="input-row">
+      <div class="url-wrap">
+        <span class="url-pre">http://</span>
+        <input type="text" id="url-in" placeholder="exemple.com  ou  192.168.1.10:8080" autocomplete="off" spellcheck="false"/>
+      </div>
+      <button class="btn-go" id="btn-go" onclick="startScan()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="5,3 19,12 5,21"/></svg>
+        Scanner
+      </button>
+    </div>
+    <div class="chips">
+      <span class="chip-lbl">Mode :</span>
+      <div class="chip on" id="c-spider" onclick="toggleChip('spider')">Spider</div>
+      <div class="chip on" id="c-active" onclick="toggleChip('active')">Scan actif</div>
+    </div>
+  </div>
+
+  <div class="notice warn">
+    <span>&#x26A0;</span>
+    <span><strong>Autorisation obligatoire.</strong> Ne scanne que des applications dont tu as la permission. Pour tester sans risque : <strong>http://testphp.vulnweb.com</strong></span>
+  </div>
+
+  <div id="prog-box">
+    <div class="ph">
+      <div class="pdot"></div>
+      <span class="ptitle" id="ptitle">Initialisation...</span>
+      <span class="purl" id="purl"></span>
+    </div>
+    <div class="steps" id="steps"></div>
+  </div>
+
+  <div id="rep-box">
+    <div>
+      <div class="rep-title">Rapport de securite</div>
+      <div class="rep-meta" id="rep-meta"></div>
+    </div>
+    <div class="sev-row" id="sev-row"></div>
+    <div class="vulns" id="vulns"></div>
+    <div class="actions">
+      <button class="btn-dl" onclick="dlReport()">&#x2B07; Telecharger rapport HTML</button>
+      <button class="btn-new" onclick="resetScan()">+ Nouveau scan</button>
+    </div>
+  </div>
+
+</div>
+<script>
+const STEPS_DEF=[
+  {id:'connect',label:'Connexion a la cible'},
+  {id:'spider', label:'Spider - exploration des pages'},
+  {id:'active', label:'Scan actif - detection des failles'},
+  {id:'alerts', label:'Recuperation des alertes'},
+  {id:'report', label:'Generation du rapport'},
+];
+let chips={spider:true,active:true};
+let currentUrl='';
+let pollTimer=null;
+
+async function checkZap(){
+  try{
+    const r=await fetch('/api/check-zap');
+    const d=await r.json();
+    const badge=document.getElementById('zap-badge');
+    const dot=document.getElementById('zap-dot');
+    const txt=document.getElementById('zap-txt');
+    if(d.running){
+      badge.className='zap-status ok';
+      dot.className='dot ok';
+      txt.textContent='ZAP connecte - pret a scanner';
+    }else{
+      badge.className='zap-status fail';
+      dot.className='dot fail';
+      txt.textContent='ZAP non detecte sur le port 8080';
+    }
+  }catch(e){
+    document.getElementById('zap-txt').textContent='Impossible de contacter le serveur';
+  }
+}
+
+function toggleChip(id){
+  const active=Object.values(chips).filter(Boolean).length;
+  if(chips[id]&&active<=1)return;
+  chips[id]=!chips[id];
+  document.getElementById('c-'+id).classList.toggle('on',chips[id]);
+}
+
+function renderSteps(){
+  document.getElementById('steps').innerHTML=STEPS_DEF.map(s=>`
+    <div class="step" id="step-${s.id}">
+      <div class="sicon" id="icon-${s.id}">-</div>
+      <span class="slbl">${s.label}</span>
+      <div class="bwrap"><div class="bar" id="bar-${s.id}"></div></div>
+    </div>`).join('');
+}
+
+function setStep(id,state,pct){
+  STEPS_DEF.forEach(s=>document.getElementById('step-'+s.id).classList.remove('active'));
+  const el=document.getElementById('step-'+id);
+  const icon=document.getElementById('icon-'+id);
+  const bar=document.getElementById('bar-'+id);
+  if(state==='active'){el.classList.add('active');icon.textContent='o';}
+  else if(state==='done'){el.classList.add('done');icon.textContent='v';bar.style.width='100%';}
+  if(pct!==undefined)bar.style.width=pct+'%';
+}
+
+async function startScan(){
+  let url=document.getElementById('url-in').value.trim();
+  if(!url){alert('Entre une URL !');return;}
+  if(!url.startsWith('http'))url='http://'+url;
+  currentUrl=url;
+  document.getElementById('btn-go').disabled=true;
+  document.getElementById('rep-box').classList.remove('show');
+  document.getElementById('prog-box').classList.add('show');
+  document.getElementById('purl').textContent=url;
+  document.getElementById('ptitle').textContent='Demarrage du scan...';
+  renderSteps();
+  await fetch('/api/scan',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({url,spider:chips.spider,active:chips.active})
+  });
+  pollTimer=setInterval(pollStatus,2000);
+}
+
+async function pollStatus(){
+  try{
+    const r=await fetch('/api/status?url='+encodeURIComponent(currentUrl));
+    const d=await r.json();
+    document.getElementById('ptitle').textContent=d.msg||'...';
+    if(d.step){
+      if(d.pct>=100)setStep(d.step,'done');
+      else setStep(d.step,'active',d.pct);
+    }
+    if(d.done){
+      clearInterval(pollTimer);
+      if(d.error){
+        document.getElementById('ptitle').textContent='Erreur : '+d.error;
+        document.getElementById('btn-go').disabled=false;
+      }else{
+        STEPS_DEF.forEach(s=>setStep(s.id,'done'));
+        document.getElementById('ptitle').textContent='Scan termine !';
+        await showReport();
+        document.getElementById('btn-go').disabled=false;
+      }
+    }
+  }catch(e){console.error(e);}
+}
+
+async function showReport(){
+  const r=await fetch('/api/result?url='+encodeURIComponent(currentUrl));
+  const d=await r.json();
+  if(d.error)return;
+  const now=new Date().toLocaleString('fr-FR');
+  document.getElementById('rep-meta').textContent=currentUrl+' — '+now+' — '+d.total+' alertes';
+  const c=d.counts||{};
+  document.getElementById('sev-row').innerHTML=`
+    <div class="sev h"><div class="sev-n">${c.High||0}</div><div class="sev-lbl">High</div></div>
+    <div class="sev m"><div class="sev-n">${c.Medium||0}</div><div class="sev-lbl">Medium</div></div>
+    <div class="sev l"><div class="sev-n">${c.Low||0}</div><div class="sev-lbl">Low</div></div>
+    <div class="sev i"><div class="sev-n">${c.Informational||0}</div><div class="sev-lbl">Info</div></div>`;
+  const alerts=d.alerts||[];
+  if(alerts.length===0){
+    document.getElementById('vulns').innerHTML='<div style="text-align:center;padding:24px;color:var(--accent);font-weight:700;font-size:15px">Aucune vulnerabilite detectee !</div>';
+  }else{
+    document.getElementById('vulns').innerHTML=alerts.map((a,i)=>{
+      const risk=a.risk||'Informational';
+      const badge=risk==='High'?'bh':risk==='Medium'?'bm':risk==='Low'?'bl':'bi';
+      const name=a.name||'Inconnue';
+      const url=a.url||'';
+      const desc=a.description||a.desc||'Pas de description.';
+      const sol=a.solution||'Consulter la documentation OWASP.';
+      return`<div class="vi" id="vi-${i}" onclick="toggleVuln(${i})">
+        <div class="vh">
+          <span class="vbadge ${badge}">${risk}</span>
+          <span class="vname">${name}</span>
+          <span class="vurl">${url}</span>
+          <span class="vchev">&#x25B6;</span>
+        </div>
+        <div class="vbody">
+          <div class="vdesc">${desc}</div>
+          <div class="vsol"><strong>Solution :</strong>${sol}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('rep-box').classList.add('show');
+  document.getElementById('rep-box').scrollIntoView({behavior:'smooth'});
+}
+
+function toggleVuln(i){document.getElementById('vi-'+i).classList.toggle('open');}
+function dlReport(){window.location.href='/api/report?url='+encodeURIComponent(currentUrl);}
+function resetScan(){
+  document.getElementById('url-in').value='';
+  document.getElementById('rep-box').classList.remove('show');
+  document.getElementById('prog-box').classList.remove('show');
+  document.getElementById('btn-go').disabled=false;
+  currentUrl='';
+}
+checkZap();
+setInterval(checkZap,10000);
+</script>
+</body>
+</html>

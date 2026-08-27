@@ -1,0 +1,55 @@
+# Environnement et Secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# Caches Python et Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environnements virtuels
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Rapports générés par ZAP (conserver uniquement le dossier)
+reports/*.html
+!reports/.gitkeep
+
+# IDEs et éditeurs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.pydevproject
+.settings/
+
+# Fichiers OS et système
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.log
