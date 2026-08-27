@@ -128,4 +128,4 @@ ZapScanner/
 
 ## 📄 Licence
 
-
+See the LICENSE file for the license and usage condition
